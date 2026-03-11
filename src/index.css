@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* 增加“按下去”的质感，防止选中文字 */
+button:active {
+  transform: scale(0.95);
+}
