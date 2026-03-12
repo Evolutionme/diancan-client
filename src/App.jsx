@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ref, onValue, push } from "firebase/database";
+import { ref, onValue, push, remove } from "firebase/database";
 import { db } from './firebase'; // 引入刚才创建的 Firebase 实例
 
 function App() {
@@ -14,8 +14,12 @@ function App() {
     const unsubscribe = onValue(cartRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Firebase 存的是对象形式的列表 { id1: item1, id2: item2 }，转换为数组
-        const itemsArray = Object.values(data);
+        // Firebase 存的是对象形式的列表 { id1: item1, id2: item2 }
+        // 为了支持删除，我们需要把 id（也就是对象的 key）一起取出来
+        const itemsArray = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
         setCart(itemsArray);
       } else {
         setCart([]); // 房间为空
@@ -29,9 +33,14 @@ function App() {
   const addDish = (name, price) => {
     const newItem = { name, price };
     // 向 Firebase 对应房间的 cart 节点 push 新数据
-    // 我们不需要再自己维护本地 state，Firebase 会瞬间同步回来并触发上面的 onValue
     const cartRef = ref(db, `rooms/${roomId}/cart`);
     push(cartRef, newItem);
+  };
+
+  const removeDish = (dishId) => {
+    // 找到具体的菜品节点并删除它
+    const itemRef = ref(db, `rooms/${roomId}/cart/${dishId}`);
+    remove(itemRef);
   };
 
   return (
@@ -55,10 +64,18 @@ function App() {
         {cart.length === 0 ? (
           <p className="text-gray-500">购物车空空如也...</p>
         ) : (
-          cart.map((item, index) => (
-            <div key={index} className="flex justify-between p-2 border-b last:border-0 hover:bg-gray-50">
+          cart.map((item) => (
+            <div key={item.id} className="flex justify-between items-center p-2 border-b last:border-0 hover:bg-gray-50">
               <span>{item.name}</span>
-              <span className="font-bold text-gray-700">￥{item.price}</span>
+              <div className="flex items-center gap-4">
+                <span className="font-bold text-gray-700">￥{item.price}</span>
+                <button 
+                  onClick={() => removeDish(item.id)}
+                  className="text-red-500 hover:text-red-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors active:scale-95"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))
         )}
