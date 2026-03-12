@@ -26,6 +26,7 @@ function App() {
   const [customMenu, setCustomMenu] = useState([]);
   const [activeCategory, setActiveCategory] = useState('meat');
   
+  const [cartOpen, setCartOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [newDish, setNewDish] = useState({ name: '', price: '', category: 'meat' });
 
@@ -149,42 +150,53 @@ function App() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)] rounded-t-3xl max-h-[55vh] flex flex-col z-20 border-t border-gray-100">
-        <div className="p-5 border-b flex justify-between items-center bg-gray-50/50 rounded-t-3xl backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🛒</span>
-            <h2 className="font-bold text-lg text-gray-800">已点菜品 <span className="text-gray-400 text-sm font-normal">({cart.length})</span></h2>
-          </div>
-          <span className="text-2xl font-bold text-red-500 tracking-tight"><span className="text-lg">￥</span>{total.toFixed(2)}</span>
-        </div>
-        <div className="overflow-y-auto p-3 flex-1 scroll-smooth">
-          {cart.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="text-5xl opacity-40 mb-3 block">🍽️</span>
-              <p className="text-gray-400 font-medium">您的餐盘空空如也，快去加菜吧</p>
+      {/* 左下角悬浮购物车 */}
+      <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start">
+        {/* 展开的购物车面板 */}
+        {cartOpen && (
+          <div className="bg-white shadow-2xl rounded-2xl mb-4 w-[85vw] max-w-sm max-h-[60vh] flex flex-col border border-gray-100 animate-slide-up origin-bottom-left">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
+              <h2 className="font-bold text-gray-800">已点菜品 ({cart.length})</h2>
+              <div className="flex items-center gap-4">
+                <span className="font-bold text-red-500">￥{total.toFixed(2)}</span>
+                <button onClick={() => setCartOpen(false)} className="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200">✕</button>
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between items-center p-4 rounded-xl bg-white border border-gray-100 shadow-sm group hover:border-indigo-100 hover:shadow-md transition-all">
-                  <span className="font-semibold text-gray-800 text-lg">{item.name}</span>
-                  <div className="flex items-center gap-4">
-                    <span className="font-bold text-gray-600">￥{item.price}</span>
-                    <button 
-                      onClick={() => removeDishFromCart(item.id)}
-                      className="text-gray-400 hover:text-white w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-red-500 transition-all active:scale-90"
-                      title="移除"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
+            <div className="overflow-y-auto p-2 flex-1 scroll-smooth">
+              {cart.length === 0 ? (
+                <p className="text-center text-gray-400 py-6">购物车是空的</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl group transition-colors">
+                      <span className="font-medium text-gray-700">{item.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-gray-600">￥{item.price}</span>
+                        <button 
+                          onClick={() => removeDishFromCart(item.id)}
+                          className="text-gray-300 hover:text-red-500 w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
+                        >✕</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
+          </div>
+        )}
+
+        {/* 悬浮按钮图标 */}
+        <button 
+          onClick={() => setCartOpen(!cartOpen)}
+          className="relative bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:bg-indigo-700 active:scale-90 transition-all z-50 group"
+        >
+          <span className="text-2xl group-hover:scale-110 transition-transform">🛒</span>
+          {cart.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+              {cart.length}
+            </span>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
