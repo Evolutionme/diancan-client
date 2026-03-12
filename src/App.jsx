@@ -1,33 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
-
-// VITE_BACKEND_URL 将在 Vercel 中配置，如果在本地运行则回退到 localhost
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
-const socket = io(backendUrl);
+import { ref, onValue, push } from "firebase/database";
+import { db } from './firebase'; // 引入刚才创建的 Firebase 实例
 
 function App() {
   const [roomId, setRoomId] = useState('12345'); // 假设房间号是12345
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
-    // 自动加入房间
-    socket.emit('join_room', roomId);
-
-    // 监听对方点菜
-    socket.on('update_cart', (item) => {
-      setCart((prev) => [...prev, item]);
+    // 监听 Firebase 数据库中对应房间的菜品节点
+    const cartRef = ref(db, `rooms/${roomId}/cart`);
+    
+    // onValue 会在初始连接和每次数据变动时自动触发
+    const unsubscribe = onValue(cartRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Firebase 存的是对象形式的列表 { id1: item1, id2: item2 }，转换为数组
+        const itemsArray = Object.values(data);
+        setCart(itemsArray);
+      } else {
+        setCart([]); // 房间为空
+      }
     });
 
-    return () => {
-      socket.off('update_cart');
-    }
+    // 卸载组件时取消监听
+    return () => unsubscribe();
   }, [roomId]);
 
   const addDish = (name, price) => {
-    const newItem = { name, price, roomId };
-    setCart([...cart, newItem]);
-    // 通知对方
-    socket.emit('add_to_cart', newItem);
+    const newItem = { name, price };
+    // 向 Firebase 对应房间的 cart 节点 push 新数据
+    // 我们不需要再自己维护本地 state，Firebase 会瞬间同步回来并触发上面的 onValue
+    const cartRef = ref(db, `rooms/${roomId}/cart`);
+    push(cartRef, newItem);
   };
 
   return (
